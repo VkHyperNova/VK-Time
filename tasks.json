@@ -1,7 +1,7 @@
 [
   {
     "name": "asd",
-    "total_seconds": 5
+    "total_seconds": 7
   },
   {
     "name": "asd2",
@@ -10,5 +10,9 @@
   {
     "name": "a",
     "total_seconds": 4
+  },
+  {
+    "name": "vk",
+    "total_seconds": 2
   }
 ]

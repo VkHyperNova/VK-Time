@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"sync"
 	"time"
@@ -73,11 +72,12 @@ func playSound() {
 }
 
 func saveTask(taskName string, additionalSeconds int) {
+
 	filePath := "tasks.json"
 	var tasks []Task
 
 	// Read existing tasks from the file
-	data, err := ioutil.ReadFile(filePath)
+	data, err := os.ReadFile(filePath)
 	if err == nil {
 		err = json.Unmarshal(data, &tasks)
 		if err != nil {
@@ -106,7 +106,7 @@ func saveTask(taskName string, additionalSeconds int) {
 		return
 	}
 
-	err = ioutil.WriteFile(filePath, updatedData, 0644)
+	err = os.WriteFile(filePath, updatedData, 0644)
 	if err != nil {
 		fmt.Println("Failed to write tasks to file:", err)
 	}
@@ -118,22 +118,18 @@ func main() {
 	var taskName string
 	var minutes, seconds int
 
-	fmt.Print("Enter task name: ")
-	fmt.Scanln(&taskName)
-
-	fmt.Print("Enter minutes: ")
-	_, err := fmt.Scan(&minutes)
-	if err != nil || minutes < 0 {
-		fmt.Println("Invalid input for minutes. Please enter a non-negative number.")
+	fmt.Print("Enter task name and time (format: name minutes seconds): ")
+	_, err := fmt.Scanf("%s %d %d", &taskName, &minutes, &seconds)
+	if err != nil {
+		fmt.Println("Invalid input. Please use the format: name minutes seconds")
 		return
 	}
 
-	fmt.Print("Enter seconds: ")
-	_, err = fmt.Scan(&seconds)
-	if err != nil || seconds < 0 {
-		fmt.Println("Invalid input for seconds. Please enter a non-negative number.")
+	if minutes < 0 || seconds < 0 {
+		fmt.Println("Minutes and seconds must be non-negative numbers.")
 		return
 	}
 
 	Timer(taskName, minutes, seconds)
 }
+
