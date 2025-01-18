@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"flag"
 	"fmt"
 	"os"
 	"sync"
@@ -12,30 +13,28 @@ import (
 	"github.com/faiface/beep/wav"
 )
 
-// Task represents a task with a name and total duration in seconds
 type Task struct {
 	Name         string `json:"name"`
-	TotalSeconds int    `json:"total_seconds"`
+	TotalMinutes int    `json:"total_minutes"`
 }
 
-func Timer(taskName string, minutes int, seconds int) {
-	totalSeconds := minutes*60 + seconds
-	if totalSeconds <= 0 {
-		fmt.Println("Invalid duration. Please enter a positive time.")
-		return
-	}
+func Timer(taskName string, minutes int) {
 
-	duration := time.Duration(totalSeconds) * time.Second
+	duration := time.Duration(minutes) * time.Minute
+
 	t := time.NewTimer(duration)
 	defer t.Stop()
 
 	fmt.Printf("Task '%s': Waiting for %v...\n", taskName, duration)
+
 	<-t.C
 	fmt.Println("Timer expired!")
+
 	playSound()
 
-	// Save or update the task
-	saveTask(taskName, totalSeconds)
+	saveTask(taskName, minutes)
+
+	printTask(taskName)
 }
 
 func playSound() {
@@ -68,15 +67,58 @@ func playSound() {
 		wg.Done()
 	})))
 
-	wg.Wait() // Wait for the sound to finish playing
+	wg.Wait()
 }
 
-func saveTask(taskName string, additionalSeconds int) {
+func saveTask(taskName string, minutes int) {
 
+	localFilePath := "tasks.json"
+	backupPath := "/media/veikko/VK DATA/DATABASES/TIME/tasks.json"
+	var tasks []Task
+
+	data, err := os.ReadFile(localFilePath)
+	if err == nil {
+		err = json.Unmarshal(data, &tasks)
+		if err != nil {
+			fmt.Println("Failed to parse JSON file:", err)
+			return
+		}
+	}
+
+	found := false
+	for i := range tasks {
+		if tasks[i].Name == taskName {
+			tasks[i].TotalMinutes += minutes
+			found = true
+			break
+		}
+	}
+	if !found {
+		tasks = append(tasks, Task{Name: taskName, TotalMinutes: minutes})
+	}
+
+	updatedData, err := json.MarshalIndent(tasks, "", "  ")
+	if err != nil {
+		fmt.Println("Failed to encode tasks to JSON:", err)
+		return
+	}
+
+
+	err = os.WriteFile(localFilePath, updatedData, 0644)
+	if err != nil {
+		fmt.Println("Failed to write LOCALPATH tasks to file:", err)
+	}
+
+	err = os.WriteFile(backupPath, updatedData, 0644)
+	if err != nil {
+		fmt.Println("Failed to write BACKUPPATH tasks to file:", err)
+	}
+}
+
+func printTask(taskName string) {
 	filePath := "tasks.json"
 	var tasks []Task
 
-	// Read existing tasks from the file
 	data, err := os.ReadFile(filePath)
 	if err == nil {
 		err = json.Unmarshal(data, &tasks)
@@ -86,50 +128,37 @@ func saveTask(taskName string, additionalSeconds int) {
 		}
 	}
 
-	// Update or add the task
-	found := false
 	for i := range tasks {
 		if tasks[i].Name == taskName {
-			tasks[i].TotalSeconds += additionalSeconds
-			found = true
-			break
+			fmt.Printf("[%s %d]\n", tasks[i].Name, tasks[i].TotalMinutes)		
 		}
-	}
-	if !found {
-		tasks = append(tasks, Task{Name: taskName, TotalSeconds: additionalSeconds})
-	}
-
-	// Write updated tasks back to the file
-	updatedData, err := json.MarshalIndent(tasks, "", "  ")
-	if err != nil {
-		fmt.Println("Failed to encode tasks to JSON:", err)
-		return
-	}
-
-	err = os.WriteFile(filePath, updatedData, 0644)
-	if err != nil {
-		fmt.Println("Failed to write tasks to file:", err)
 	}
 }
 
-
-
 func main() {
-	var taskName string
-	var minutes, seconds int
 
-	fmt.Print("Enter task name and time (format: name minutes seconds): ")
-	_, err := fmt.Scanf("%s %d %d", &taskName, &minutes, &seconds)
-	if err != nil {
-		fmt.Println("Invalid input. Please use the format: name minutes seconds")
-		return
+	// Define the flags
+	taskName := flag.String("name", "", "a string flag (optional)")
+	minutes := flag.Int("age", 0, "an integer flag (optional)")
+
+	// Parse the flags
+	flag.Parse()
+
+	// Check for positional arguments (remaining arguments)
+	args := flag.Args()
+	if len(args) > 0 {
+		*taskName = args[0] // Use the first positional argument as the string flag
+	}
+	if len(args) > 1 {
+		fmt.Sscanf(args[1], "%d", minutes) // Use the second positional argument as the integer flag
 	}
 
-	if minutes < 0 || seconds < 0 {
+	if *minutes < 0 {
 		fmt.Println("Minutes and seconds must be non-negative numbers.")
 		return
 	}
 
-	Timer(taskName, minutes, seconds)
-}
+	printTask(*taskName)
 
+	Timer(*taskName, *minutes)
+}

@@ -1,18 +1,14 @@
 [
   {
+    "name": "test",
+    "total_minutes": 11
+  },
+  {
+    "name": "ddd",
+    "total_minutes": 1
+  },
+  {
     "name": "asd",
-    "total_seconds": 7
-  },
-  {
-    "name": "asd2",
-    "total_seconds": 2
-  },
-  {
-    "name": "a",
-    "total_seconds": 4
-  },
-  {
-    "name": "vk",
-    "total_seconds": 2
+    "total_minutes": 2
   }
 ]
