@@ -1,6 +1,7 @@
 package main
 
 import (
+	"embed"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -12,6 +13,10 @@ import (
 	"github.com/faiface/beep/speaker"
 	"github.com/faiface/beep/wav"
 )
+
+// Embed the alarm.wav file
+//go:embed alarm.wav
+var alarmFile embed.FS
 
 type Task struct {
 	Name         string `json:"name"`
@@ -38,21 +43,23 @@ func Timer(taskName string, minutes int) {
 }
 
 func playSound() {
-	filePath := "alarm.wav"
-	f, err := os.Open(filePath)
+	// Open the embedded alarm.wav file
+	alarmData, err := alarmFile.Open("alarm.wav")
 	if err != nil {
-		fmt.Printf("Failed to open sound file (%s): %v\n", filePath, err)
+		fmt.Println("Failed to open embedded sound file:", err)
 		return
 	}
-	defer f.Close()
+	defer alarmData.Close()
 
-	streamer, format, err := wav.Decode(f)
+	// Decode the WAV file
+	streamer, format, err := wav.Decode(alarmData)
 	if err != nil {
 		fmt.Println("Failed to decode sound file:", err)
 		return
 	}
 	defer streamer.Close()
 
+	// Initialize the speaker
 	err = speaker.Init(format.SampleRate, format.SampleRate.N(time.Second/10))
 	if err != nil {
 		fmt.Println("Failed to initialize speaker:", err)
@@ -62,6 +69,7 @@ func playSound() {
 	var wg sync.WaitGroup
 	wg.Add(1)
 
+	// Play the sound
 	speaker.Play(beep.Seq(streamer, beep.Callback(func() {
 		fmt.Println("Sound finished playing")
 		wg.Done()
@@ -103,7 +111,6 @@ func saveTask(taskName string, minutes int) {
 		return
 	}
 
-
 	err = os.WriteFile(localFilePath, updatedData, 0644)
 	if err != nil {
 		fmt.Println("Failed to write LOCALPATH tasks to file:", err)
@@ -130,7 +137,7 @@ func printTask(taskName string) {
 
 	for i := range tasks {
 		if tasks[i].Name == taskName {
-			fmt.Printf("[%s %d]\n", tasks[i].Name, tasks[i].TotalMinutes)		
+			fmt.Printf("[%s %d]\n", tasks[i].Name, tasks[i].TotalMinutes)
 		}
 	}
 }
