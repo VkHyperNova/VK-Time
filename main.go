@@ -30,7 +30,7 @@ func Timer(taskName string, minutes int) {
 	t := time.NewTimer(duration)
 	defer t.Stop()
 
-	fmt.Printf("Task '%s': Waiting for %v...\n", taskName, duration)
+	printCoundown(taskName, minutes)
 
 	<-t.C
 	fmt.Println("Timer expired!")
@@ -38,8 +38,6 @@ func Timer(taskName string, minutes int) {
 	playSound()
 
 	saveTask(taskName, minutes)
-
-	printTask(taskName)
 }
 
 func playSound() {
@@ -81,7 +79,6 @@ func playSound() {
 func saveTask(taskName string, minutes int) {
 
 	localFilePath := "tasks.json"
-	backupPath := "/media/veikko/VK DATA/DATABASES/TIME/tasks.json"
 	var tasks []Task
 
 	data, err := os.ReadFile(localFilePath)
@@ -116,30 +113,26 @@ func saveTask(taskName string, minutes int) {
 		fmt.Println("Failed to write LOCALPATH tasks to file:", err)
 	}
 
+	backupPath := "/media/veikko/VK DATA/DATABASES/TIME/tasks.json"
+
 	err = os.WriteFile(backupPath, updatedData, 0644)
 	if err != nil {
 		fmt.Println("Failed to write BACKUPPATH tasks to file:", err)
 	}
 }
 
-func printTask(taskName string) {
-	filePath := "tasks.json"
-	var tasks []Task
+func printCoundown(taskName string, minutes int) {
 
-	data, err := os.ReadFile(filePath)
-	if err == nil {
-		err = json.Unmarshal(data, &tasks)
-		if err != nil {
-			fmt.Println("Failed to parse JSON file:", err)
-			return
-		}
+	totalSeconds := minutes * 60 // 20 minutes in seconds
+
+	for remaining := totalSeconds; remaining >= 0; remaining-- {
+		minutes := remaining / 60
+		seconds := remaining % 60
+		fmt.Printf("\r%s: %02d:%02d", taskName, minutes, seconds)
+		time.Sleep(1 * time.Second)
 	}
 
-	for i := range tasks {
-		if tasks[i].Name == taskName {
-			fmt.Printf("[%s %d]\n", tasks[i].Name, tasks[i].TotalMinutes)
-		}
-	}
+	fmt.Println("\nTime's up!") // Print message when countdown finishes
 }
 
 func main() {
@@ -165,7 +158,6 @@ func main() {
 		return
 	}
 
-	printTask(*taskName)
-
 	Timer(*taskName, *minutes)
+
 }
