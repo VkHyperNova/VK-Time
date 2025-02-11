@@ -13,7 +13,7 @@ type Task struct {
 
 func SaveTask(taskName string, minutes int) {
 
-	localFilePath := "data/tasks.json"
+	localFilePath := "tasks.json"
 	var tasks []Task
 
 	data, err := os.ReadFile(localFilePath)
