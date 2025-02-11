@@ -11,10 +11,9 @@ type Task struct {
 	TotalMinutes int    `json:"total_minutes"`
 }
 
-
 func SaveTask(taskName string, minutes int) {
 
-	localFilePath := "tasks.json"
+	localFilePath := "data/tasks.json"
 	var tasks []Task
 
 	data, err := os.ReadFile(localFilePath)
