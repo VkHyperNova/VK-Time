@@ -29,6 +29,7 @@ func SaveTask(taskName string, minutes int) {
 	for i := range tasks {
 		if tasks[i].Name == taskName {
 			tasks[i].TotalMinutes += minutes
+			fmt.Println(tasks[i].Name + ":", tasks[i].TotalMinutes, "minutes")
 			found = true
 			break
 		}
