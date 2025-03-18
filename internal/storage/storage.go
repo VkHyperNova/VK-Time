@@ -11,37 +11,48 @@ type Task struct {
 	TotalMinutes int    `json:"total_minutes"`
 }
 
-func SaveTask(taskName string, minutes int) {
+type Tasks struct {
+	Tasks []Task `json:"tasks"`
+}
 
-	localFilePath := "tasks.json"
-	var tasks []Task
-
-	data, err := os.ReadFile(localFilePath)
+func (t *Tasks) ReadFile(name string) {
+	data, err := os.ReadFile(name)
 	if err == nil {
-		err = json.Unmarshal(data, &tasks)
+		err = json.Unmarshal(data, t)
 		if err != nil {
 			fmt.Println("Failed to parse JSON file:", err)
 			return
 		}
 	}
 
-	found := false
-	for i := range tasks {
-		if tasks[i].Name == taskName {
-			tasks[i].TotalMinutes += minutes
-			fmt.Println(tasks[i].Name + ":", tasks[i].TotalMinutes, "minutes")
-			found = true
-			break
+}
+
+func (t *Tasks) AddTask(taskName string, taskTime int) bool {
+	for i := range t.Tasks {
+		if t.Tasks[i].Name == taskName {
+			t.Tasks[i].TotalMinutes += taskTime
+			fmt.Println(t.Tasks[i].Name+":", t.Tasks[i].TotalMinutes, "minutes")
+			return true
 		}
 	}
-	if !found {
-		tasks = append(tasks, Task{Name: taskName, TotalMinutes: minutes})
-	}
 
-	updatedData, err := json.MarshalIndent(tasks, "", "  ")
+	// If Task does not exist 
+	t.Tasks = append(t.Tasks, Task{Name: taskName, TotalMinutes: taskTime})
+	return false
+}
+
+func (t *Tasks) SaveTask(taskName string, minutes int) bool {
+
+	localFilePath := "tasks.json"
+	backupPath := "/media/veikko/VK DATA/DATABASES/TIME/tasks.json"
+
+	t.ReadFile(localFilePath)
+
+	t.AddTask(taskName, minutes) 
+
+	updatedData, err := json.MarshalIndent(t, "", "  ")
 	if err != nil {
 		fmt.Println("Failed to encode tasks to JSON:", err)
-		return
 	}
 
 	err = os.WriteFile(localFilePath, updatedData, 0644)
@@ -49,9 +60,9 @@ func SaveTask(taskName string, minutes int) {
 		fmt.Println("Failed to write LOCALPATH tasks to file:", err)
 	}
 
-	backupPath := "/media/veikko/VK DATA/DATABASES/TIME/tasks.json"
 	err = os.WriteFile(backupPath, updatedData, 0644)
 	if err != nil {
 		fmt.Println("Failed to write BACKUPPATH tasks to file:", err)
 	}
+	return true
 }

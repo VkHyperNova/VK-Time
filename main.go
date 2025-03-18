@@ -3,13 +3,13 @@ package main
 import (
 	"flag"
 	"fmt"
+	"sync"
 	"vk-time/internal/audio"
 	"vk-time/internal/storage"
 	"vk-time/internal/timer"
 )
 
 func main() {
-
 	// Define the flags
 	taskName := flag.String("name", "", "a string flag (optional)")
 	minutes := flag.Int("age", 0, "an integer flag (optional)")
@@ -27,13 +27,33 @@ func main() {
 	}
 
 	if *minutes < 0 {
-		fmt.Println("Minutes and seconds must be non-negative numbers.")
+		fmt.Println("Minutes must be non-negative.")
 		return
 	}
 
-	timer.Timer(*taskName, *minutes)
+	// Use WaitGroup to wait for both goroutines to finish
+	var wg sync.WaitGroup
+	wg.Add(2)
 
-	audio.PlaySound()
+	// Start playing MP3 in a goroutine
+	go func() {
+		defer wg.Done()
+		audio.PlayMP3("meditation1.mp3", *minutes)
+	}()
 
-	storage.SaveTask(*taskName, *minutes)
+	// Start the timer in a goroutine
+	go func() {
+		defer wg.Done()
+		timer.Timer(*taskName, *minutes)
+	}()
+
+	// Wait for both goroutines to finish
+	wg.Wait()
+
+	// Play alarm sound after both processes complete
+	audio.PlaySound("alarm.wav")
+
+	// Save task after completion
+	t := storage.Tasks{}
+	t.SaveTask(*taskName, *minutes)
 }

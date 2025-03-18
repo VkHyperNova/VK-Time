@@ -1,10 +1,12 @@
-[
-  {
-    "name": "",
-    "total_minutes": 0
-  },
-  {
-    "name": "meditation",
-    "total_minutes": 3
-  }
-]
+{
+  "tasks": [
+    {
+      "name": "meditation",
+      "total_minutes": 5
+    },
+    {
+      "name": "asd",
+      "total_minutes": 0
+    }
+  ]
+}
