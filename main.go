@@ -38,7 +38,7 @@ func main() {
 	// Start playing MP3 in a goroutine
 	go func() {
 		defer wg.Done()
-		audio.PlayMP3("default_song.mp3", *minutes)
+		audio.PlayMP3("default_music.mp3", *minutes)
 	}()
 
 	// Start the timer in a goroutine
@@ -51,7 +51,7 @@ func main() {
 	wg.Wait()
 
 	// Play alarm sound after both processes complete
-	audio.PlaySound("alarm.wav")
+	audio.PlayWav("alarm.wav")
 
 	// Save task after completion
 	t := storage.Tasks{}

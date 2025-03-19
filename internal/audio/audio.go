@@ -14,7 +14,7 @@ import (
 	"github.com/faiface/beep/wav"
 )
 
-//go:embed alarm.wav default_song.mp3
+//go:embed alarm.wav default_music.mp3
 var embeddedFiles embed.FS
 
 // wrapper for *bytes.Reader to implement io.ReadCloser
@@ -26,7 +26,7 @@ func (rc *readCloser) Close() error {
 	return nil // No actual closing needed
 }
 
-func PlaySound(name string) {
+func PlayWav(name string) {
 	// Open the embedded alarm.wav file
 	alarmData, err := embeddedFiles.Open(name)
 	if err != nil {
