@@ -14,7 +14,7 @@ import (
 	"github.com/faiface/beep/wav"
 )
 
-//go:embed alarm.wav meditation1.mp3
+//go:embed alarm.wav default_song.mp3
 var embeddedFiles embed.FS
 
 // wrapper for *bytes.Reader to implement io.ReadCloser

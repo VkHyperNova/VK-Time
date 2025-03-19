@@ -38,7 +38,7 @@ func main() {
 	// Start playing MP3 in a goroutine
 	go func() {
 		defer wg.Done()
-		audio.PlayMP3("meditation1.mp3", *minutes)
+		audio.PlayMP3("default_song.mp3", *minutes)
 	}()
 
 	// Start the timer in a goroutine
