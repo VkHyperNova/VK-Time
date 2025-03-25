@@ -61,10 +61,10 @@ func (t *Tasks) SaveTask(taskName string, minutes int) bool {
 	}
 
 
-	// backupPath := "/media/veikko/VK DATA/DATABASES/TIME/tasks.json"
-	// err = os.WriteFile(backupPath, updatedData, 0644)
-	// if err != nil {
-	// 	fmt.Println("Failed to write BACKUPPATH tasks to file:", err)
-	// }
+	backupPath := "/media/veikko/VK DATA/DATABASES/TIME/tasks.json"
+	err = os.WriteFile(backupPath, updatedData, 0644)
+	if err != nil {
+		fmt.Println("Failed to write BACKUPPATH tasks to file:", err)
+	}
 	return true
 }
