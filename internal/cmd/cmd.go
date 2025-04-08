@@ -9,6 +9,8 @@ import (
 
 func StartTask(taskName string, minutes int) {
 
+	audio.SwitchToHeadphones()
+
 	t := storage.Tasks{}
 
 	t.ReadFile("tasks.json")
@@ -44,4 +46,10 @@ func StartTask(taskName string, minutes int) {
 	}
 
 	t.SaveTask()
+
+	audio.SwitchToSpeakers()
 }
+
+
+
+
