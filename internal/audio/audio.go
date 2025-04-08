@@ -55,7 +55,7 @@ func PlayWav(name string) {
 
 	// Play the sound
 	speaker.Play(beep.Seq(streamer, beep.Callback(func() {
-		fmt.Println("Sound finished playing")
+		fmt.Println("Alarm finished playing")
 		wg.Done()
 	})))
 
@@ -108,7 +108,7 @@ func PlayMP3(name string, minutes int) {
 			<-done
 		}
 		speaker.Clear()
-		fmt.Println("Stopped playing after", minutes, "minutes")
+		fmt.Println("\nMusic Stopped playing after", minutes, "minutes")
 	}()
 
 	// Block until playback is complete

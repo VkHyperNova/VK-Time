@@ -2,8 +2,9 @@ module vk-time
 
 go 1.21.6
 
+require github.com/faiface/beep v1.1.0
+
 require (
-	github.com/faiface/beep v1.1.0 // indirect
 	github.com/hajimehoshi/go-mp3 v0.3.0 // indirect
 	github.com/hajimehoshi/oto v0.7.1 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
