@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"time"
+	"github.com/go-vgo/robotgo"
 )
 
 func PrintCoundown(taskName string, minutes int) {
@@ -51,3 +52,34 @@ func ParseFlags() (string, int) {
 
 	return *taskName, *minutes
 }
+
+// StartMouseMover moves the mouse in a rectangle shape (up, right, down, left) every minute per side, until stopped.
+func StartMouseMover(stop chan struct{}) {
+	const movePixels = 38 // Approx. 1 cm
+	ticker := time.NewTicker(1 * time.Second)
+	defer ticker.Stop()
+
+	// Define movement directions: (dx, dy)
+	moves := [][2]int{
+		{0, -movePixels}, // Up
+		{movePixels, 0},  // Right
+		{0, movePixels},  // Down
+		{-movePixels, 0}, // Left
+	}
+
+	moveIndex := 0
+
+	for {
+		select {
+		case <-ticker.C:
+			x, y := robotgo.Location()
+			dx, dy := moves[moveIndex][0], moves[moveIndex][1]
+			robotgo.Move(x+dx, y+dy)
+
+			moveIndex = (moveIndex + 1) % len(moves) // cycle through moves
+		case <-stop:
+			return
+		}
+	}
+}
+

@@ -27,19 +27,19 @@ func (t *Tasks) ReadFile(name string) {
 
 }
 
-func (t *Tasks) Add(taskName string, taskTime int) {
+func (t *Tasks) AddTask(taskName string, taskTime int) {
 	t.Tasks = append(t.Tasks, Task{Name: taskName, TotalMinutes: taskTime})
 	fmt.Println(taskName+":", taskTime, "minutes")
 }
 
-func (t *Tasks) Update(taskName string, taskTime int) {
+func (t *Tasks) UpdateTask(taskName string, taskTime int) {
 	for i := range t.Tasks {
 		if t.Tasks[i].Name == taskName {
 			t.Tasks[i].TotalMinutes += taskTime
 			fmt.Println(t.Tasks[i].Name+":", t.Tasks[i].TotalMinutes, "minutes")
 		}
 	}
-	
+
 }
 
 func (t *Tasks) SaveTask() bool {
@@ -54,11 +54,11 @@ func (t *Tasks) SaveTask() bool {
 		fmt.Println("Failed to write LOCALPATH tasks to file:", err)
 	}
 
-	// backupPath := "/media/veikko/VK DATA/DATABASES/TIME/tasks.json"
-	// err = os.WriteFile(backupPath, updatedData, 0644)
-	// if err != nil {
-	// 	fmt.Println("Failed to write BACKUPPATH tasks to file:", err)
-	// }
+	backupPath := "/media/veikko/VK DATA/DATABASES/TIME/tasks.json"
+	err = os.WriteFile(backupPath, updatedData, 0644)
+	if err != nil {
+		fmt.Println("Failed to write BACKUPPATH tasks to file:", err)
+	}
 	return true
 }
 

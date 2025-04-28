@@ -8,48 +8,54 @@ import (
 )
 
 func StartTask(taskName string, minutes int) {
-
 	audio.SwitchToHeadphones()
 
 	t := storage.Tasks{}
-
 	t.ReadFile("tasks.json")
 
 	taskExists := t.PrintTask(taskName)
 
-	// Use WaitGroup to wait for both goroutines to finish
-	var wg sync.WaitGroup
-	wg.Add(2)
+	// Channel to signal stopping the mouse mover
+	stopMouseMover := make(chan struct{})
 
-	// Start playing MP3 in a goroutine
+	// Use WaitGroup to wait for all goroutines
+	var wg sync.WaitGroup
+	wg.Add(3)
+
+	// Start moving the mouse
+	go func() {
+		defer wg.Done()
+		util.StartMouseMover(stopMouseMover)
+	}()
+
+	// Start playing MP3
 	go func() {
 		defer wg.Done()
 		audio.PlayMP3("default_music.mp3", minutes)
 	}()
 
-	// Start the timer in a goroutine
+	// Start the timer
 	go func() {
 		defer wg.Done()
 		util.Timer(taskName, minutes)
 	}()
 
-	// Wait for both goroutines to finish
+	// Wait for the timer and audio to complete
 	wg.Wait()
+
+	// After task is complete, stop mouse mover
+	close(stopMouseMover)
 
 	// Play alarm sound after both processes complete
 	audio.PlayWav("alarm.wav")
 
 	if taskExists {
-		t.Update(taskName, minutes)
+		t.UpdateTask(taskName, minutes)
 	} else {
-		t.Add(taskName, minutes)
+		t.AddTask(taskName, minutes)
 	}
 
 	t.SaveTask()
 
 	audio.SwitchToSpeakers()
 }
-
-
-
-
