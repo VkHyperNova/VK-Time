@@ -11,6 +11,10 @@
     {
       "name": "new",
       "total_minutes": 0
+    },
+    {
+      "name": "med",
+      "total_minutes": 1
     }
   ]
 }

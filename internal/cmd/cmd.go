@@ -18,15 +18,12 @@ func StartTask(taskName string, minutes int) {
 	// Channel to signal stopping the mouse mover
 	stopMouseMover := make(chan struct{})
 
-	// Use WaitGroup to wait for all goroutines
+	// Use WaitGroup to wait for audio and timer (not mouse mover)
 	var wg sync.WaitGroup
-	wg.Add(3)
+	wg.Add(2)
 
-	// Start moving the mouse
-	go func() {
-		defer wg.Done()
-		util.StartMouseMover(stopMouseMover)
-	}()
+	// Start moving the mouse (don't wait for this one in WaitGroup)
+	go util.StartMouseMover(stopMouseMover)
 
 	// Start playing MP3
 	go func() {
@@ -40,13 +37,13 @@ func StartTask(taskName string, minutes int) {
 		util.Timer(taskName, minutes)
 	}()
 
-	// Wait for the timer and audio to complete
+	// Wait for timer and audio to complete
 	wg.Wait()
 
-	// After task is complete, stop mouse mover
+	// Then stop the mouse mover
 	close(stopMouseMover)
 
-	// Play alarm sound after both processes complete
+	// Play alarm sound
 	audio.PlayWav("alarm.wav")
 
 	if taskExists {
@@ -59,3 +56,4 @@ func StartTask(taskName string, minutes int) {
 
 	audio.SwitchToSpeakers()
 }
+
