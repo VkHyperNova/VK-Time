@@ -59,6 +59,8 @@ func main() {
 		tasks.AddTask(taskName, minutes)
 	}
 
+	tasks.PrintTask(taskName)
+
 	// Save tasks to disk
 	tasks.SaveTask()
 

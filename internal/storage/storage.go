@@ -29,14 +29,12 @@ func (t *Tasks) ReadFile(name string) {
 
 func (t *Tasks) AddTask(taskName string, taskTime int) {
 	t.Tasks = append(t.Tasks, Task{Name: taskName, TotalMinutes: taskTime})
-	fmt.Println(taskName+":", taskTime, "minutes")
 }
 
 func (t *Tasks) UpdateTask(taskName string, taskTime int) {
 	for i := range t.Tasks {
 		if t.Tasks[i].Name == taskName {
 			t.Tasks[i].TotalMinutes += taskTime
-			fmt.Println(t.Tasks[i].Name+":", t.Tasks[i].TotalMinutes, "minutes")
 		}
 	}
 
@@ -65,9 +63,17 @@ func (t *Tasks) SaveTask() bool {
 func (t *Tasks) PrintTask(taskName string) bool {
 	for i := range t.Tasks {
 		if t.Tasks[i].Name == taskName {
-			fmt.Println(t.Tasks[i].Name+": ", t.Tasks[i].TotalMinutes)
+			hours, minutesLeft := CalculateMinutesAndHours(t.Tasks[i].TotalMinutes)
+			fmt.Println(t.Tasks[i].Name+": ", hours, "h ", minutesLeft, " minutes")
 			return true
 		}
 	}
 	return false
+}
+
+func CalculateMinutesAndHours(minutes int) (int, int) {
+	hours := minutes/60
+	minutesLeft := minutes - (hours * 60)
+
+	return hours, minutesLeft
 }
