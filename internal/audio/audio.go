@@ -1,119 +1,95 @@
 package audio
 
 import (
-	"bytes"
 	"embed"
 	"fmt"
 	"os"
 	"os/exec"
-	"sync"
+	"sync/atomic"
 	"time"
+	"vk-time/internal/storage"
 
 	"github.com/faiface/beep"
 	"github.com/faiface/beep/mp3"
 	"github.com/faiface/beep/speaker"
-	"github.com/faiface/beep/wav"
 )
 
-//go:embed alarm.wav default_music.mp3
+//go:embed music.mp3
 var embeddedFiles embed.FS
 
-// wrapper for *bytes.Reader to implement io.ReadCloser
-type readCloser struct {
-	*bytes.Reader
-}
-
-func (rc *readCloser) Close() error {
-	return nil // No actual closing needed
-}
-
-func PlayWav(name string) {
-	// Open the embedded alarm.wav file
-	alarmData, err := embeddedFiles.Open(name)
+func PlayMP3(duration time.Duration, paused *atomic.Bool, doneChan <-chan struct{}) {
+	embeddedFile, err := embeddedFiles.Open("music.mp3")
 	if err != nil {
-		fmt.Println("Failed to open embedded sound file:", err)
+		fmt.Println("❌ Failed to open embedded MP3:", err)
 		return
 	}
-	defer alarmData.Close()
+	defer embeddedFile.Close()
 
-	// Decode the WAV file
-	streamer, format, err := wav.Decode(alarmData)
+	streamer, format, err := mp3.Decode(embeddedFile)
 	if err != nil {
-		fmt.Println("Failed to decode sound file:", err)
+		fmt.Println("❌ Failed to decode MP3:", err)
 		return
 	}
 	defer streamer.Close()
 
-	// Initialize the speaker
-	err = speaker.Init(format.SampleRate, format.SampleRate.N(time.Second/10))
-	if err != nil {
-		fmt.Println("Failed to initialize speaker:", err)
-		return
-	}
+	ctrl := &beep.Ctrl{Streamer: beep.Loop(-1, streamer), Paused: false}
+	speaker.Init(format.SampleRate, format.SampleRate.N(time.Second/10))
+	speaker.Play(ctrl)
 
-	var wg sync.WaitGroup
-	wg.Add(1)
+	end := time.After(duration)
 
-	// Play the sound
-	speaker.Play(beep.Seq(streamer, beep.Callback(func() {
-		fmt.Println("Alarm finished playing")
-		wg.Done()
-	})))
-
-	wg.Wait()
-}
-
-func PlayMP3(name string, minutes int) {
-	// Convert minutes to duration
-	duration := time.Duration(minutes) * time.Minute
-
-	var fileData []byte
-	var err error
-
-	// Try to load the file from embedded storage
-	fileData, err = embeddedFiles.ReadFile(name)
-	if err != nil {
-		// If not found in embed, try from disk
-		fileData, err = os.ReadFile(name)
-		if err != nil {
-			fmt.Println("Error opening MP3 file:", err)
+	for {
+		select {
+		case <-doneChan:
+			speaker.Clear()
+			return
+		case <-time.After(100 * time.Millisecond):
+			speaker.Lock()
+			ctrl.Paused = paused.Load()
+			speaker.Unlock()
+		case <-end:
+			speaker.Clear()
 			return
 		}
 	}
+}
 
-	// Create a reader that implements io.ReadCloser
-	mp3Reader := &readCloser{bytes.NewReader(fileData)}
+func CountdownTimer(task string, duration time.Duration, paused *atomic.Bool, doneChan <-chan struct{}) {
+	
+	ticker := time.NewTicker(time.Second)
+	defer ticker.Stop()
 
-	// Decode MP3
-	streamer, format, err := mp3.Decode(mp3Reader)
-	if err != nil {
-		fmt.Println("Error decoding MP3:", err)
-		return
-	}
-	defer streamer.Close()
+	var elapsed time.Duration
+	lastTick := time.Now()
 
-	// Initialize speaker
-	speaker.Init(format.SampleRate, format.SampleRate.N(time.Second/10))
+	for {
+		select {
+		case <-doneChan:
+			return
+		case <-ticker.C:
+			if paused.Load() {
+				lastTick = time.Now()
+				continue
+			}
 
-	// Create a done channel
-	done := make(chan bool)
+			now := time.Now()
+			elapsed += now.Sub(lastTick)
+			lastTick = now
 
-	// Play the MP3 file in a loop until duration is reached
-	startTime := time.Now()
-	go func() {
-		for time.Since(startTime) < duration {
-			streamer.Seek(0) // Restart the stream
-			speaker.Play(beep.Seq(streamer, beep.Callback(func() {
-				done <- true
-			})))
-			<-done
+			remaining := duration - elapsed
+			if remaining <= 0 {
+				fmt.Printf("\r\033[K%s - Time passed: %s / %s", task, duration, duration)
+				fmt.Println("\n⏰ Time’s up!")
+				SwitchToSpeakers()
+				time.Sleep(time.Second)
+				tasks := storage.Tasks{}
+				tasks.Save(task, duration)
+				os.Exit(0)
+			}
+
+			fmt.Printf("\r\033[K%s - Time passed: %s / %s", task, elapsed.Truncate(time.Second), duration)
 		}
-		speaker.Clear()
-		fmt.Println("\nMusic Stopped playing after", minutes, "minutes")
-	}()
-
-	// Block until playback is complete
-	time.Sleep(duration)
+	}
 }
 
 func switchAudioSink(sinkName, label string) {

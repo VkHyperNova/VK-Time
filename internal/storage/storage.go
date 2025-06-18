@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"time"
 )
 
 type Task struct {
@@ -47,7 +48,7 @@ func (t *Tasks) SaveTask() bool {
 		fmt.Println("Failed to encode tasks to JSON:", err)
 	}
 
-	err = os.WriteFile("tasks.json", updatedData, 0644)
+	err = os.WriteFile("vk-time-db/tasks.json", updatedData, 0644)
 	if err != nil {
 		fmt.Println("Failed to write LOCALPATH tasks to file:", err)
 	}
@@ -60,7 +61,7 @@ func (t *Tasks) SaveTask() bool {
 	return true
 }
 
-func (t *Tasks) PrintTask(taskName string) bool {
+func (t *Tasks) FindAndPrintTask(taskName string) bool {
 	for i := range t.Tasks {
 		if t.Tasks[i].Name == taskName {
 			hours, minutesLeft := CalculateMinutesAndHours(t.Tasks[i].TotalMinutes)
@@ -76,4 +77,26 @@ func CalculateMinutesAndHours(minutes int) (int, int) {
 	minutesLeft := minutes - (hours * 60)
 
 	return hours, minutesLeft
+}
+
+func (t *Tasks) Save(taskName string, duration time.Duration) {
+
+	minutes := int(duration.Minutes()) 
+
+	t.ReadFile("vk-time-db/tasks.json")
+
+	// Check if the task already exists
+	taskExists := t.FindAndPrintTask(taskName)
+
+	// Update or add task based on existence
+	if taskExists {
+		t.UpdateTask(taskName, minutes)
+	} else {
+		t.AddTask(taskName, minutes)
+	}
+
+	t.FindAndPrintTask(taskName)
+
+	// Save tasks to disk
+	t.SaveTask()
 }

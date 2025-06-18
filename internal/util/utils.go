@@ -3,36 +3,13 @@ package util
 import (
 	"flag"
 	"fmt"
+	"sync/atomic"
 	"time"
+
 	"github.com/go-vgo/robotgo"
 )
 
-func PrintCoundown(taskName string, minutes int) {
-
-	totalSeconds := minutes * 60 // 20 minutes in seconds
-
-	for remaining := totalSeconds; remaining >= 0; remaining-- {
-		minutes := remaining / 60
-		seconds := remaining % 60
-		fmt.Printf("\r%s: %02d:%02d", taskName, minutes, seconds)
-		time.Sleep(1 * time.Second)
-	}
-}
-
-func Timer(taskName string, minutes int) {
-
-	duration := time.Duration(minutes) * time.Minute
-
-	t := time.NewTimer(duration)
-	defer t.Stop()
-
-	PrintCoundown(taskName, minutes)
-
-	<-t.C
-	fmt.Println("\nTimer expired!")
-}
-
-func ParseFlags() (string, int) {
+func ParseFlags() (string, time.Duration) {
 	// Define the flags
 	taskName := flag.String("name", "", "a string flag (optional)")
 	minutes := flag.Int("age", 0, "an integer flag (optional)")
@@ -50,16 +27,19 @@ func ParseFlags() (string, int) {
 		fmt.Sscanf(args[1], "%d", minutes) // Use the second positional argument as the integer flag
 	}
 
-	return *taskName, *minutes
+	// Convert to time.Duration
+	duration := time.Duration(*minutes) * time.Minute
+
+	return *taskName, duration
 }
 
-// StartMouseMover moves the mouse in a rectangle shape (up, right, down, left) every minute per side, until stopped.
-func StartMouseMover(stop chan struct{}) {
-	const movePixels = 38 // Approx. 1 cm
-	ticker := time.NewTicker(1 * time.Second)
+func StartMouseMover(duration time.Duration, paused *atomic.Bool, doneChan <-chan struct{}) {
+	const movePixels = 38
+	ticker := time.NewTicker(60 * time.Second)
 	defer ticker.Stop()
 
-	// Define movement directions: (dx, dy)
+	timeout := time.After(duration)
+
 	moves := [][2]int{
 		{0, -movePixels}, // Up
 		{movePixels, 0},  // Right
@@ -71,15 +51,20 @@ func StartMouseMover(stop chan struct{}) {
 
 	for {
 		select {
+		case <-doneChan:
+			return
+		case <-timeout:
+			return
 		case <-ticker.C:
+			if paused.Load() {
+				continue
+			}
 			x, y := robotgo.Location()
 			dx, dy := moves[moveIndex][0], moves[moveIndex][1]
 			robotgo.Move(x+dx, y+dy)
-
-			moveIndex = (moveIndex + 1) % len(moves) // cycle through moves
-		case <-stop:
-			return
+			moveIndex = (moveIndex + 1) % len(moves)
 		}
 	}
 }
+
 
