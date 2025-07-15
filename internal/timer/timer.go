@@ -9,10 +9,10 @@ import (
 	"vk-time/internal/storage"
 )
 
-func CountdownTimer(task string, duration time.Duration, paused *atomic.Bool, doneChan <-chan struct{}) {
+func StartCountdownTimer(task string, duration time.Duration, paused *atomic.Bool, doneChan <-chan struct{}) {
 
 	ticker := time.NewTicker(time.Second)
-	
+
 	defer ticker.Stop()
 
 	var elapsed time.Duration

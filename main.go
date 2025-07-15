@@ -21,7 +21,7 @@ func main() {
 
 	doneChan := make(chan struct{})
 
-	go timer.CountdownTimer(taskName, duration, &paused, doneChan)
+	go timer.StartCountdownTimer(taskName, duration, &paused, doneChan)
 
 	go audio.PlayMP3(duration, &paused, doneChan)
 
@@ -68,7 +68,7 @@ func main() {
 			tasks := storage.Tasks{}
 
 			tasks.Save(taskName, elapsed)
-			
+
 			os.Exit(0)
 		}
 	}
