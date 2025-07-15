@@ -38,10 +38,12 @@ func main() {
 		switch input {
 
 		case "p":
+			audio.SwitchToSpeakers()
 			paused.Store(true)
 			fmt.Println("⏸️  Paused.")
 
 		case "r":
+			audio.SwitchToHeadphones()
 			paused.Store(false)
 			fmt.Println("▶️  Resumed.")
 
