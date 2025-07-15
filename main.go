@@ -5,10 +5,8 @@ import (
 	"fmt"
 	"os"
 	"sync/atomic"
-	"time"
 	"vk-time/internal/audio"
 	"vk-time/internal/mouse"
-	"vk-time/internal/storage"
 	"vk-time/internal/timer"
 	"vk-time/internal/util"
 )
@@ -18,57 +16,39 @@ func main() {
 	taskName, duration := util.ParseFlags()
 
 	var paused atomic.Bool
+	done := make(chan struct{})
 
-	doneChan := make(chan struct{})
-
-	go timer.StartCountdownTimer(taskName, duration, &paused, doneChan)
-
-	go audio.PlayMP3(duration, &paused, doneChan)
-
-	go mouse.StartMouseMover(duration, &paused, doneChan)
-
-	start := time.Now()
+	if duration == 0 {
+		go timer.StartCountdown(taskName, &paused, done)
+	} else {
+		go timer.StartCountdownTimer(taskName, duration, &paused, done)
+	}
+	go audio.PlayMP3(&paused, done)
+	go mouse.StartMouseMover(&paused, done)
 
 	audio.SwitchToHeadphones()
-
 	scanner := bufio.NewScanner(os.Stdin)
 
 	for {
 
 		fmt.Print("\nType 'p' to pause, 'r' to resume, 'q' to quit: ")
-
 		scanner.Scan()
-
 		input := scanner.Text()
 
 		switch input {
 
 		case "p":
-
 			paused.Store(true)
-
 			fmt.Println("⏸️  Paused.")
 
 		case "r":
-
 			paused.Store(false)
-
 			fmt.Println("▶️  Resumed.")
 
 		case "q":
-
-			close(doneChan)
-
+			close(done)
 			fmt.Println("⏹️  Stopped.")
-
 			audio.SwitchToSpeakers()
-
-			elapsed := time.Since(start)
-
-			tasks := storage.Tasks{}
-
-			tasks.Save(taskName, elapsed)
-
 			os.Exit(0)
 		}
 	}

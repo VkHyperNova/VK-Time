@@ -14,7 +14,7 @@ import (
 //go:embed music.mp3
 var embeddedFiles embed.FS
 
-func PlayMP3(duration time.Duration, paused *atomic.Bool, doneChan <-chan struct{}) {
+func PlayMP3(paused *atomic.Bool, doneChan <-chan struct{}) {
 	embeddedFile, err := embeddedFiles.Open("music.mp3")
 	if err != nil {
 		fmt.Println("❌ Failed to open embedded MP3:", err)
@@ -34,7 +34,6 @@ func PlayMP3(duration time.Duration, paused *atomic.Bool, doneChan <-chan struct
 	speaker.Init(format.SampleRate, format.SampleRate.N(time.Second/10))
 	speaker.Play(ctrl)
 
-	end := time.Now().Add(duration)
 	ticker := time.NewTicker(100 * time.Millisecond)
 	defer ticker.Stop()
 
@@ -47,11 +46,6 @@ func PlayMP3(duration time.Duration, paused *atomic.Bool, doneChan <-chan struct
 			speaker.Lock()
 			ctrl.Paused = paused.Load()
 			speaker.Unlock()
-
-			if time.Now().After(end) {
-				speaker.Clear()
-				return
-			}
 		}
 	}
 }
